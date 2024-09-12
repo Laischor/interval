@@ -1,0 +1,236 @@
+<html>
+
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vuetify@3.6.4/dist/vuetify.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/material-icons@1.13.12/iconfont/material-icons.min.css">
+	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/vuetify@3.6.4/dist/vuetify.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+</head>
+
+<body>
+	<div id="app">
+		<v-app>
+			<v-app-bar name="app-bar">
+				<div class="mx-auto">Interval</div>
+			</v-app-bar>
+
+			<v-main class="ma-3">
+				<v-dialog v-model="config">
+
+					<v-card class="pa-3">
+
+						<h3 class="my-3">Exercise</h3>
+						<v-text-field type="number" label="Number of exercises" v-model="data.exercises"></v-text-field>
+						<v-text-field type="number" label="Seconds per exercise" v-model="data.seconds"></v-text-field>
+						<v-text-field type="number" label="Rest between exercises" v-model="data.rest"></v-text-field>
+						<v-text-field type="number" label="Reps" v-model="data.reps"></v-text-field>
+
+						Time per set: {{ setTimeText }}
+
+						<h3 class="my-3">Sets</h3>
+						<v-text-field type="number" label="Sets" v-model="data.sets"></v-text-field>
+						<v-text-field type="number" label="Rest between sets" v-model="data.setrest"></v-text-field>
+						Total time: {{ totalTime }}
+
+						<v-btn @click="save" size="small" class="mt-3">save</v-btn>
+
+					</v-card>
+
+				</v-dialog>
+				<v-btn @click="config = true" size="small" class="mb-3 mr-3">Settings</v-btn>
+
+				<h1 v-if="parseInt(data.sets) > 1">Set {{ set }} / {{ data.sets }}</h1>
+				<h1>{{ activeText }}</h1>
+				<h1 v-if="active < 4">{{ count }} sec.</h1>
+
+				<div v-if="interval">
+					<v-btn @click="pause" size="small" class="mb-3 mr-3">stop</v-btn>
+				</div>
+				<div v-else>
+					<v-btn @click="start" size="small" class="mb-3 mr-3">start</v-btn>
+				</div>
+
+			</v-main>
+
+		</v-app>
+	</div>
+	<script>
+		const { createApp } = Vue
+		const { createVuetify } = Vuetify
+
+		const vuetify = createVuetify()
+
+		createApp({
+			computed: {
+				setTime() {
+					let time = (parseInt(this.data.seconds) + parseInt(this.data.rest)) * this.data.exercises * this.data.reps;
+
+					return time;
+				},
+
+				setTimeText() {
+					return Math.floor(this.setTime / 60) + ':' + (this.setTime % 60).toString().padStart(2, '0');
+				},
+
+				totalTime() {
+					let total = (this.setTime + parseInt(this.data.setrest)) * this.data.sets;
+
+					if(parseInt(this.data.sets) > 1)
+						total -= parseInt(this.data.setrest);
+
+					return Math.floor(total / 60) + ':' + (total % 60).toString().padStart(2, '0');
+				},
+
+				activeText() {
+					let text = '';
+
+					switch(this.active) {
+						case 1:
+							text = 'Exercise ' + this.exercise;
+							text += ' (' + this.rep+' / ' + this.data.reps + ')';
+							break;
+						case 2:
+							text = 'Rest';
+							break;
+						case 3:
+							text = 'Rest between sets';
+							break;
+						case 4:
+							text = 'END';
+							break;
+					}
+
+					return text;
+				},
+			},
+
+			data() {
+				return {
+					db: new PouchDB('interval'),
+
+					config: false,
+
+					data: {
+						seconds: 30,
+						exercises: 2,
+						reps: 5,
+						rest: 0,
+						sets: 2,
+						setrest: 60,
+					},
+
+					active: 1,
+					count: 1,
+					exercise: 1,
+					rep: 1,
+					set: 1,
+					interval: null,
+				};
+			},
+
+			mounted() {
+				this.db.get('interval').then(doc => {
+				    this.data = doc;
+					this.count = this.data.seconds;
+				}).catch(() => {
+				    this.data = { ...{ _id: 'interval' }, ...this.data };
+
+				    this.save();
+				});
+
+				var currentDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+				this.date = currentDate.toLocaleDateString('de-DE', {
+					year: 'numeric',
+					month: '2-digit',
+					day: '2-digit',
+				});
+			},
+
+			methods: {
+				save() {
+					this.db.put(this.data);
+					this.config = false;
+				},
+
+				beep() {
+					var audio = new Audio('beep.mp3');
+					audio.play();
+				},
+
+				start() {
+					this.count = parseInt(this.data.seconds);
+					this.active = 1;
+					this.exercise = 1;
+					this.rep = 1;
+					this.set = 1;
+
+					this.interval = window.setInterval(this.down, 1000);
+				},
+
+				pause() {
+					window.clearInterval(this.interval);
+					this.interval = null;
+				},
+
+				down() {
+					this.count--;
+
+					if(this.count == 3)
+						this.beep();
+
+					if(this.count <= 0) {
+						switch(parseInt(this.active)) {
+							case 1:
+								if (parseInt(this.data.rest) > 0) {
+									this.active = 2;
+									this.count = parseInt(this.data.rest);
+								} else {
+									this.count = parseInt(this.data.seconds);
+									this.exercise++;
+
+									if (this.exercise > parseInt(this.data.exercises)) {
+										this.exercise = 1;
+										this.rep++;
+
+										if(this.rep > parseInt(this.data.reps)) {
+											if(this.set >= this.data.sets) {
+												this.active = 4;
+
+												this.pause();
+												this.beep();
+											} else {
+												this.active = 3;
+												this.count = parseInt(this.data.setrest);
+											}
+										}
+									}
+								}
+							break;
+							case 2:
+								this.active = 1;
+								this.exercise = 1;
+								this.count = parseInt(this.data.seconds);
+								break;
+							case 3:
+								this.active = 1;
+								this.exercise = 1;
+								this.rep = 1;
+								this.set++;
+								this.count = parseInt(this.data.seconds);
+								break;
+						}
+
+					}
+
+
+				},
+			}
+		}).use(vuetify).mount('#app')
+	</script>
+
+</body>
+
+</html>
