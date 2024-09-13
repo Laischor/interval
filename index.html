@@ -157,6 +157,8 @@
 
 				beep() {
 					var audio = new Audio('beep.mp3');
+					audio.autoplay = true;
+					audio.muted = false;
 					audio.play();
 				},
 
