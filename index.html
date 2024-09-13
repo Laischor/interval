@@ -62,6 +62,38 @@
 	</div>
 
 	<script>
+		(function() {
+			window.AudioContext = window.AudioContext || window.webkitAudioContext;
+			if (window.AudioContext) {
+				window.audioContext = new window.AudioContext();
+			}
+			var fixAudioContext = function (e) {
+				if (window.audioContext) {
+					// Create empty buffer
+					var buffer = window.audioContext.createBuffer(1, 1, 22050);
+					var source = window.audioContext.createBufferSource();
+					source.buffer = buffer;
+					// Connect to output (speakers)
+					source.connect(window.audioContext.destination);
+					// Play sound
+					if (source.start) {
+						source.start(0);
+					} else if (source.play) {
+						source.play(0);
+					} else if (source.noteOn) {
+						source.noteOn(0);
+					}
+				}
+				// Remove events
+				document.removeEventListener('touchstart', fixAudioContext);
+				document.removeEventListener('touchend', fixAudioContext);
+			};
+			// iOS 6-8
+			document.addEventListener('touchstart', fixAudioContext);
+			// iOS 9
+			document.addEventListener('touchend', fixAudioContext);
+		})();
+
 		const { createApp } = Vue
 		const { createVuetify } = Vuetify
 
@@ -177,8 +209,23 @@
 				},
 
 				beep() {
-					var audio = new Audio('beep.mp3');
-					audio.play();
+					let path = 'beep.mp3';
+					let context = window.audioContext;
+					let request = new XMLHttpRequest();
+
+					request.open('GET', path, true);
+					request.responseType = 'arraybuffer';
+					request.addEventListener('load', function (e) {
+						context.decodeAudioData(this.response, function (buffer) {
+							let source = context.createBufferSource();
+
+							source.buffer = buffer;
+							source.connect(context.destination);
+							source.start(0);
+						});
+					}, false);
+
+					request.send();
 				},
 
 				start() {
