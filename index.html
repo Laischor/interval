@@ -4,7 +4,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta charset="UTF-8">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vuetify@3.6.4/dist/vuetify.min.css">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/material-icons@1.13.12/iconfont/material-icons.min.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css">
 	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/vuetify@3.6.4/dist/vuetify.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
@@ -14,52 +14,53 @@
 	<div id="app">
 		<v-app>
 			<v-app-bar name="app-bar">
-				<div class="mx-auto">Interval</div>
-				<audio controls id="audio">
-					<source src="beep.mp3" type="audio/mp3">
-				</audio>
+				<template v-slot:prepend>
+					<v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+				</template>
+
+				<v-app-bar-title>Interval</v-app-bar-title>
 			</v-app-bar>
 
-			<v-main class="ma-3">
-				<v-dialog v-model="config">
+			<v-navigation-drawer v-model="drawer">
+				<div>
+					<h3 class="my-3">Exercise</h3>
+					<v-text-field type="number" label="Number of exercises" v-model="data.exercises" @change="save"></v-text-field>
+					<v-text-field type="number" label="Seconds per exercise" v-model="data.seconds" @change="save"></v-text-field>
+					<v-text-field type="number" label="Rest between exercises" v-model="data.rest" @change="save"></v-text-field>
+					<v-text-field type="number" label="Reps" v-model="data.reps" @change="save"></v-text-field>
 
-					<v-card class="pa-3">
+					<div>Time per set: {{ setTimeText }}</div>
 
-						<h3 class="my-3">Exercise</h3>
-						<v-text-field type="number" label="Number of exercises" v-model="data.exercises"></v-text-field>
-						<v-text-field type="number" label="Seconds per exercise" v-model="data.seconds"></v-text-field>
-						<v-text-field type="number" label="Rest between exercises" v-model="data.rest"></v-text-field>
-						<v-text-field type="number" label="Reps" v-model="data.reps"></v-text-field>
+					<h3 class="my-3">Sets</h3>
+					<v-text-field type="number" label="Sets" v-model="data.sets" @change="save"></v-text-field>
+					<v-text-field type="number" label="Rest between sets" v-model="data.setrest" @change="save"></v-text-field>
 
-						Time per set: {{ setTimeText }}
+					<div>Total time: {{ totalTime }}</div>
 
-						<h3 class="my-3">Sets</h3>
-						<v-text-field type="number" label="Sets" v-model="data.sets"></v-text-field>
-						<v-text-field type="number" label="Rest between sets" v-model="data.setrest"></v-text-field>
-						Total time: {{ totalTime }}
+				</div>
+			</v-navigation-drawer>
 
-						<v-btn @click="save" size="small" class="mt-3">save</v-btn>
-
-					</v-card>
-
-				</v-dialog>
-				<v-btn @click="config = true" size="small" class="mb-3 mr-3">Settings</v-btn>
+			<v-main class="ma-3 text-center">
 
 				<h1 v-if="parseInt(data.sets) > 1">Set {{ set }} / {{ data.sets }}</h1>
 				<h1>{{ activeText }}</h1>
-				<h1 v-if="active < 4">{{ count }} sec.</h1>
+
+				<v-progress-circular v-model="percent" size="200" width="20" color="primary">
+					<div style="font-size:4em">{{ count }}</div>
+				</v-progress-circular>
 
 				<div v-if="interval">
-					<v-btn @click="pause" size="small" class="mb-3 mr-3">stop</v-btn>
+					<v-btn @click="pause" class="mt-3" color="primary">stop</v-btn>
 				</div>
 				<div v-else>
-					<v-btn @click="start" size="small" class="mb-3 mr-3">start</v-btn>
+					<v-btn @click="start" class="mt-3" color="primary">start</v-btn>
 				</div>
 
 			</v-main>
 
 		</v-app>
 	</div>
+
 	<script>
 		const { createApp } = Vue
 		const { createVuetify } = Vuetify
@@ -68,6 +69,10 @@
 
 		createApp({
 			computed: {
+				percent() {
+					return Math.ceil(100 / this.maxTime * this.count);
+				},
+
 				setTime() {
 					let time = (parseInt(this.data.seconds) + parseInt(this.data.rest)) * this.data.exercises * this.data.reps;
 
@@ -85,6 +90,27 @@
 						total -= parseInt(this.data.setrest);
 
 					return Math.floor(total / 60) + ':' + (total % 60).toString().padStart(2, '0');
+				},
+
+				maxTime() {
+					let max = 0;
+
+					switch(this.active) {
+						case 1:
+							max = this.data.seconds;
+							break;
+						case 2:
+							max = this.data.rest;
+							break;
+						case 3:
+							max = this.data.setrest;
+							break;
+						case 4:
+							max = 1;
+							break;
+					}
+
+					return max;
 				},
 
 				activeText() {
@@ -114,7 +140,7 @@
 				return {
 					db: new PouchDB('interval'),
 
-					config: false,
+					drawer: false,
 
 					data: {
 						seconds: 30,
@@ -131,8 +157,6 @@
 					rep: 1,
 					set: 1,
 					interval: null,
-					// audio: null,
-					// default: 'data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV',
 				};
 			},
 
@@ -145,34 +169,16 @@
 
 				    this.save();
 				});
-
-				var currentDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
-				this.date = currentDate.toLocaleDateString('de-DE', {
-					year: 'numeric',
-					month: '2-digit',
-					day: '2-digit',
-				});
-
-				this.audio = new Audio();
-				this.audio.autoplay = true;
-				this.audio.src = this.default;
 			},
 
 			methods: {
 				save() {
 					this.db.put(this.data);
-					this.config = false;
 				},
 
 				beep() {
-					document.getElementById('audio').play();
-					// var audio = new Audio('beep.mp3');
-					// audio.autoplay = true;
-					// audio.muted = false;
-					// audio.play();
-					// this.audio.src = 'beep.mp3';
-
-					// window.setTimeout(() => { this.audio.src = this.default; }, 4000);
+					var audio = new Audio('beep.mp3');
+					audio.play();
 				},
 
 				start() {
@@ -196,7 +202,7 @@
 					if(this.count == 3)
 						this.beep();
 
-					if(this.count <= 0) {
+					if(this.count < 0) {
 						switch(parseInt(this.active)) {
 							case 1:
 								if (parseInt(this.data.rest) > 0) {
