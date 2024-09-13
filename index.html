@@ -62,38 +62,6 @@
 	</div>
 
 	<script>
-		(function() {
-			window.AudioContext = window.AudioContext || window.webkitAudioContext;
-			if (window.AudioContext) {
-				window.audioContext = new window.AudioContext();
-			}
-			var fixAudioContext = function (e) {
-				if (window.audioContext) {
-					// Create empty buffer
-					var buffer = window.audioContext.createBuffer(1, 1, 22050);
-					var source = window.audioContext.createBufferSource();
-					source.buffer = buffer;
-					// Connect to output (speakers)
-					source.connect(window.audioContext.destination);
-					// Play sound
-					if (source.start) {
-						source.start(0);
-					} else if (source.play) {
-						source.play(0);
-					} else if (source.noteOn) {
-						source.noteOn(0);
-					}
-				}
-				// Remove events
-				document.removeEventListener('touchstart', fixAudioContext);
-				document.removeEventListener('touchend', fixAudioContext);
-			};
-			// iOS 6-8
-			document.addEventListener('touchstart', fixAudioContext);
-			// iOS 9
-			document.addEventListener('touchend', fixAudioContext);
-		})();
-
 		const { createApp } = Vue
 		const { createVuetify } = Vuetify
 
@@ -189,6 +157,8 @@
 					rep: 1,
 					set: 1,
 					interval: null,
+					audio: null,
+					default: "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
 				};
 			},
 
@@ -201,6 +171,9 @@
 
 				    this.save();
 				});
+
+				this.audio = new Audio('beep.mp3');
+				this.audio.autoplay = true;
 			},
 
 			methods: {
@@ -209,26 +182,16 @@
 				},
 
 				beep() {
-					let path = 'beep.mp3';
-					let context = window.audioContext;
-					let request = new XMLHttpRequest();
+					this.audio.src = 'beep.mp3';
 
-					request.open('GET', path, true);
-					request.responseType = 'arraybuffer';
-					request.addEventListener('load', function (e) {
-						context.decodeAudioData(this.response, function (buffer) {
-							let source = context.createBufferSource();
+					window.setTimeout(() => { this.audio.src = this.default }, 4000);
 
-							source.buffer = buffer;
-							source.connect(context.destination);
-							source.start(0);
-						});
-					}, false);
-
-					request.send();
+					// this.audio.play();
 				},
 
 				start() {
+					this.audio.src = this.default;
+
 					this.count = parseInt(this.data.seconds);
 					this.active = 1;
 					this.exercise = 1;
@@ -239,6 +202,8 @@
 				},
 
 				pause() {
+					this.audio.src = this.default;
+
 					window.clearInterval(this.interval);
 					this.interval = null;
 				},
