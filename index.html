@@ -15,6 +15,7 @@
 		<v-app>
 			<v-app-bar name="app-bar">
 				<div class="mx-auto">Interval</div>
+				<audio></audio>
 			</v-app-bar>
 
 			<v-main class="ma-3">
@@ -128,6 +129,8 @@
 					rep: 1,
 					set: 1,
 					interval: null,
+					audio: null,
+					default: 'data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV',
 				};
 			},
 
@@ -147,6 +150,10 @@
 					month: '2-digit',
 					day: '2-digit',
 				});
+
+				this.audio = new Audio();
+				this.audio.autoplay = true;
+				this.audio.src = this.default;
 			},
 
 			methods: {
@@ -156,10 +163,14 @@
 				},
 
 				beep() {
-					var audio = new Audio('beep.mp3');
-					audio.autoplay = true;
-					audio.muted = false;
-					audio.play();
+					// var audio = new Audio('beep.mp3');
+					// audio.autoplay = true;
+					// audio.muted = false;
+					// audio.play();
+
+					this.audio.src = 'beep.mp3';
+
+					window.setTimeout(() => { this.audio.src = this.default; }, 3000);
 				},
 
 				start() {
