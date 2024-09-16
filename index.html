@@ -172,6 +172,12 @@
 			mounted() {
 				this.db.get('interval').then(doc => {
 				    this.data = doc;
+
+					if(!this.data.prepare) {
+						this.data.prepare = 4;
+						this.save();
+					}
+
 					this.count = parseInt(this.data.prepare);
 				}).catch(() => {
 				    this.data = { ...{ _id: 'interval' }, ...this.data };
