@@ -234,7 +234,7 @@
 								break;
 							case 1:
 							case 2:
-								if (parseInt(this.data.rest) > 0 && this.active == 1) {
+								if (parseInt(this.data.rest) > 0 && this.active == 1 && this.rep < parseInt(this.data.reps)) {
 									this.active = 2;
 									this.count = parseInt(this.data.rest);
 								} else {
