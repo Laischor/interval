@@ -232,10 +232,12 @@
 								this.count = parseInt(this.data.seconds);
 								break;
 							case 1:
-								if (parseInt(this.data.rest) > 0) {
+							case 2:
+								if (parseInt(this.data.rest) > 0 && this.active == 1) {
 									this.active = 2;
 									this.count = parseInt(this.data.rest);
 								} else {
+									this.active = 1;
 									this.count = parseInt(this.data.seconds);
 									this.exercise++;
 
@@ -257,11 +259,6 @@
 									}
 								}
 							break;
-							case 2:
-								this.active = 1;
-								this.exercise = 1;
-								this.count = parseInt(this.data.seconds);
-								break;
 							case 3:
 								this.active = 1;
 								this.exercise = 1;
