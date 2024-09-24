@@ -1,0 +1,20 @@
+{
+	"short_name": "IT",
+	"name": "Interval Timer",
+	"start_url": "/",
+	"icons": [
+		{
+			"src": "schedule_192dp_E8EAED.png",
+			"type": "image/png",
+			"sizes": "192x192"
+		},
+		{
+			"src": "schedule_512dp_E8EAED.png",
+			"type": "image/png",
+			"sizes": "512x512"
+		}
+	],
+	"display": "standalone",
+	"theme_color": "#000000",
+	"background_color": "#ffffff"
+}

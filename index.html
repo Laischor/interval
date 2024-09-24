@@ -3,6 +3,7 @@
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta charset="UTF-8">
+	<link rel="manifest" href="manifest.json">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vuetify@3.6.4/dist/vuetify.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css">
 	<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -18,7 +19,7 @@
 					<v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
 				</template>
 
-				<v-app-bar-title>Interval</v-app-bar-title>
+				<v-app-bar-title>Interval Timer</v-app-bar-title>
 			</v-app-bar>
 
 			<v-navigation-drawer v-model="drawer">
